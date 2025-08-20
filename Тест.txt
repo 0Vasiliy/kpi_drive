@@ -1,0 +1,168 @@
+1. 
+DELETE FROM indicator_to_mo_fact  
+WHERE fact_time = '2024-09-10'    
+AND indicator_to_mo_id IN (       
+    SELECT indicator_to_mo_id     
+    FROM indicator_to_mo          
+    WHERE indicator_id = 273  
+
+2.Docker
+version: '3.8'
+
+services:
+  # Веб-сервер Nginx
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-web
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./html:/usr/share/nginx/html
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - php
+      - backend1
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # PHP-FPM сервер
+  php:
+    image: php:8.2-fpm-alpine
+    container_name: php-fpm
+    volumes:
+      - ./php:/var/www/html
+      - ./php.ini:/usr/local/etc/php/php.ini
+    environment:
+      - PHP_FPM_LISTEN=9000
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # База данных MariaDB
+  mariadb:
+    image: mariadb:10.11
+    container_name: mariadb-db
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=app_db
+      - MYSQL_USER=app_user
+      - MYSQL_PASSWORD=userpassword
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Backend сервис (Node.js/Python/Java)
+  backend1:
+    image: node:18-alpine
+    container_name: backend-service
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    working_dir: /app
+    command: sh -c "npm install && npm start"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=mariadb
+      - DB_PORT=3306
+      - DB_NAME=app_db
+      - DB_USER=app_user
+      - DB_PASS=userpassword
+    depends_on:
+      - mariadb
+    networks:
+      - app-network
+    restart: unless-stopped
+
+# Создаем bridge network для изоляции сервисов
+networks:
+  app-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+### Команды
+docker-compose up -d    Запуск всех сервисов
+docker-compose down     Остановка всех сервисов
+docker-compose restart nginx   Перезапуск сервиса
+docker-compose ps       Просмотр работающих контейнеров
+
+# Войти в контейнер PHP    Выполнение команд внутри контейнера
+docker-compose exec php sh
+
+# Выполнить команду в базе данных    Выполнение команд внутри контейнера
+docker-compose exec mariadb mysql -u root -p
+
+# Пересобрать образы    Сборка и запуск
+docker-compose build
+
+# Запуск с пересборкой  Сборка и запуск
+docker-compose up -d --build
+
+# Все сервисы           Просмотр логов
+docker-compose logs
+
+# Конкретный сервис
+docker-compose logs nginx
+docker-compose logs php
+docker-compose logs mariadb
+docker-compose logs backend1
+
+docker-compose stats   Просмотр статистики
+
+Также если есть доступ к визуальному интерфейсу сервера(либо локально пример XAMPP) это можно сделать нажатием мышки.
+
+
+3.Ubuntu
+# Ubuntu/Linux
+ls                     
+cd /home/user         
+cd ..                  
+mkdir NewFolder        
+rm -r Folder           
+rm file.txt            
+cp file.txt copy.txt   
+mv file.txt new.txt 
+
+#Просмотр и редактирование
+cat file.txt          
+less file.txt          
+vim file.txt   
+
+#Сетка
+ping google.com        
+ifconfig               
+traceroute google.com 
+
+#System info
+uname -a              
+ps aux                
+kill 1234             
+top                   
+
+#Доступ и права
+chmod 755 file.txt    
+chown user:group file 
+ls -l                 
+
+
+
+4.Команда поиска по содержимому файлов
+
+grep "текст" file.txt
+grep -r "текст" /путь/к/папке/
+grep -i "текст" file.txt
+grep -n "текст" file.txt
+grep -w "слово" file.txt
+grep --color "текст" file.txt
+grep -H "текст" file.txt
